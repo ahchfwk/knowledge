@@ -1051,6 +1051,8 @@ setuptools有几个缺点：不呢个查看/删除已安装的包，缺乏对git
 
 使用pip help可以对pip指令有个大致了解。pip文档：https://pip.pypa.io/en/stable/user_guide/
 
+一个小贴士：pip freeze >requirements.txt记录项目的所有依赖包，pip install -r requirements.txt一键安装。
+
 yolk文档：https://github.com/cakebread/yolk
 
 https://blog.csdn.net/jdbc/article/details/52983066
@@ -1147,17 +1149,59 @@ def f(x):
 
 #### 86 使用不同的数据结构优化性能
 
+deque在添加、删除、插入元素时比list快，元素数量巨变时，性能要好得多；
+
+bisect中有一组函数来保持随机存取的序列容器（比如list）有序，比用sort快，在有序列表中查找元素变得简单；
+
+heapq类似于bisect，也是维护列表的一组函数，可将序列容器转化为堆，查找前n个最大最小元素变得容易。
+
+如果容器中存储的是同一类型元素，array可能要list更好（占用内存更小，部分操作更快）。
+
 #### 87 充分利用set的优势
+
+set在交并差方面比list的迭代快得多。
+
+![1539764762414](set.png)
 
 #### 88 使用multiprocessing克服GIL的缺陷
 
+①进程通信优先考虑Pipe和Queue，而不是Lock、Event、Condition、Semaphore等同步原语。两个进程通信用Pipe（性能更快，非线程安全），多个用Queue。
+
+②一般情况下要避免进程间资源共享，开销较大。如果不可避免，可以通过multiprocesssing.Value（https://blog.csdn.net/chenyulancn/article/details/77836593）、multiprocesssing.Array（https://blog.csdn.net/sangky/article/details/82467337）或multiprocesssing.sharedctypes来实现内存共享。也可通过服务器进程管理器manager()来实现数据和状态的共享。各有优势，共享内存效率更高，Manager（https://www.jianshu.com/p/52676b93430d）更方便。
+
+③确保pool.map中传入的数据是可以序列化的。
+
+多进程具体介绍：https://www.cnblogs.com/kaituorensheng/p/4445418.html
+
+https://blog.csdn.net/u014556057/article/details/61616902
+
 #### 89 使用线程池提高效率
+
+https://www.cnblogs.com/xiaozi/p/6182990.html
 
 #### 90 使用c/c++模块扩展提高性能
 
+（windows下静态库后缀为.lib，动态库后缀为.dll；linux下静态库后缀为.a，动态库后缀为.so）
+
+①在c中include <python.h>后，函数中要解析python参数（PyArg_ParseTuple），返回也要转换成python对象（Py_BuildValue），并且需要有初始化函数（以init开头）。将c++/c文件生成的so文件，可以直接被import。
+
+②不经过任何封装打包成so，再使用python的ctypes调用即可。
+
+https://www.cnblogs.com/mypsq/p/6114838.html
+
+https://blog.csdn.net/taiyang1987912/article/details/44779719
+
 #### 91 使用Cython编写扩展模块
 
+③ 将python代码翻译为C代码（cython xxx.py 生成 xxx.c，一般会比较长，在用gcc命令编译成so文件）。但每次如此使用很麻烦，Cython提供了无需显示编译的方案（pyximport，将后缀由py改为pyx）。
 
 ```
-
+import pyximport
+pyximport.install()
+import moduleName
+# 此时会自动生成moduleName.so文件
 ```
+
+cython还使得python中可以进行类型声明，还可以直接调用C函数。
+
+https://www.jianshu.com/p/fc5025094912
